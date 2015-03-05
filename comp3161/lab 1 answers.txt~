@@ -1,0 +1,5 @@
+#2: The statement is getting all the rows from lives and then performing a join with the rows from the table located_in i.e. it is doing a cross product so for every row in lives it will have every row of located_in asociated with it. So we would expect this query to produce a table with 4x3 = 12 rows.
+
+#6 Delimieter is used to define what phrase will be used to know that we are finished creating the stored procedure.
+
+#7 show procedure status;

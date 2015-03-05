@@ -1,0 +1,209 @@
+#2: The statement is getting all the rows from lives and then performing a join with the rows from the table located_in i.e. it is doing a cross product so for every row in lives it will have every row of located_in asociated with it. So we would expect this query to produce a table with 4x3 = 12 rows.
+
+#6 Delimieter is used to define what phrase will be used to know that we are finished creating the stored procedure.
+
+#7 show procedure status;
+
+#9 update works set salary=(case when ((salary*1.1)>95000) then salary*1.03 else (salary*1.1) end);
+
+Query OK, 4 rows affected (0.32 sec)
+Rows matched: 4  Changed: 4  Warnings: 0
+
+mysql> select * from works;
++-------------+--------------+--------+
+| person_name | company_name | salary |
++-------------+--------------+--------+
+| John        | TechTech     |  93500 |
+| Luke        | MarsTech     | 101970 |
+| Mark        | EarthTech    |  66000 |
+| Marku       | EarthTech    |  66000 |
++-------------+--------------+--------+
+4 rows in set (0.00 sec)
+
+
+Database schema below including stored procedures
+
+
+-- MySQL dump 10.13  Distrib 5.5.40, for debian-linux-gnu (x86_64)
+--
+-- Host: localhost    Database: lab_2
+-- ------------------------------------------------------
+-- Server version	5.5.40-0ubuntu0.14.04.1
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `lives`
+--
+
+DROP TABLE IF EXISTS `lives`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `lives` (
+  `person_name` text,
+  `street` text,
+  `city` text
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `lives`
+--
+
+LOCK TABLES `lives` WRITE;
+/*!40000 ALTER TABLE `lives` DISABLE KEYS */;
+INSERT INTO `lives` VALUES ('John','Masbrow','NY'),('Luke','Cheeze','Jersey'),('Mark','Cheeze','Jersey'),('Marku','NeverStreet','NeverCty');
+/*!40000 ALTER TABLE `lives` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `located_in`
+--
+
+DROP TABLE IF EXISTS `located_in`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `located_in` (
+  `company_name` varchar(20) NOT NULL,
+  `city` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`company_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `located_in`
+--
+
+LOCK TABLES `located_in` WRITE;
+/*!40000 ALTER TABLE `located_in` DISABLE KEYS */;
+INSERT INTO `located_in` VALUES ('EarthTech','Manchester City'),('MarsTech','Kingston'),('TechTech','NY');
+/*!40000 ALTER TABLE `located_in` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `manages`
+--
+
+DROP TABLE IF EXISTS `manages`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `manages` (
+  `person_name` varchar(20) DEFAULT NULL,
+  `manager_name` varchar(20) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `manages`
+--
+
+LOCK TABLES `manages` WRITE;
+/*!40000 ALTER TABLE `manages` DISABLE KEYS */;
+INSERT INTO `manages` VALUES ('John','Luke'),('Mark','Luke');
+/*!40000 ALTER TABLE `manages` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `works`
+--
+
+DROP TABLE IF EXISTS `works`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `works` (
+  `person_name` varchar(20) NOT NULL DEFAULT '',
+  `company_name` varchar(20) NOT NULL DEFAULT '',
+  `salary` float DEFAULT NULL,
+  PRIMARY KEY (`person_name`,`company_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `works`
+--
+
+LOCK TABLES `works` WRITE;
+/*!40000 ALTER TABLE `works` DISABLE KEYS */;
+INSERT INTO `works` VALUES ('John','TechTech',93500),('Luke','MarsTech',101970),('Mark','EarthTech',66000),('Marku','EarthTech',66000);
+/*!40000 ALTER TABLE `works` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping routines for database 'lab_2'
+--
+/*!50003 DROP PROCEDURE IF EXISTS `GetAll` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8 */ ;
+/*!50003 SET character_set_results = utf8 */ ;
+/*!50003 SET collation_connection  = utf8_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = '' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAll`()
+begin
+select * from lives;
+end ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `GetAllPersonSalary` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8 */ ;
+/*!50003 SET character_set_results = utf8 */ ;
+/*!50003 SET collation_connection  = utf8_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = '' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAllPersonSalary`()
+BEGIN
+select person_name,salary from works;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `GetBankEmployees` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8 */ ;
+/*!50003 SET character_set_results = utf8 */ ;
+/*!50003 SET collation_connection  = utf8_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = '' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetBankEmployees`(in bank_name varchar(20))
+begin select works.person_name,city from lives join works on lives.person_name=works.person_name where company_name=bank_name; end ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2015-03-05  0:09:25
+
