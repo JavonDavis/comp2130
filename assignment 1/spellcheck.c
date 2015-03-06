@@ -2,25 +2,67 @@
 #include <string.h>
 #include <stdlib.h>
 
-int binary_search(char *list[],char value[],int first,int last)
+int search(char *list[],char word[])
 {	
+	int i;
+	for(i=0;i<45427;i++)
+	{
+		if(strcmp(list[i],word)==0)
+			return 1;
+	}
+	return 0;
+}
+
+char* findReplacement(char *list[],char word[])
+{
+	int n,i,numSugg =0;
+	char *suggestions[10];
+	char *answer;
 	
-	int mid = (int) ((first+last)/2);
-	if(first>last)
-		return 0;
-	else if(strcmp(value,list[mid])==0)
-		return 1;
-	else if(strcmp(value,list[mid])>0)
-		return binary_search(list,value,mid+1,last);
-	else if(strcmp(value,list[mid])<0)
-		return binary_search(list,value,first,mid-1);	
+ 	n = sizeof(word)-1;
+	while(n>0)
+	{
+		char repl[n];
+		for(i=0;i<n;i++)
+		{
+			repl[i] = word[i];
+		}
+		repl[n] = '\0';
+		
+		for(i=0;i<45427;i++)
+		{
+			if(numSugg==10)
+				break;
+			if(strstr(list[i],repl)!=NULL)
+			{
+				suggestions[numSugg] = malloc(strlen(list[i])+1);
+				printf("%s\n",list[i]);
+				strcpy(suggestions[numSugg],list[i]);
+				printf("%s\n",suggestions[numSugg]);
+				numSugg++;
+				
+			}
+			
+		}
+		
+		n--;
+	}
+	int key;
+	printf("The word %s is not found in the dictionary\n",word);
+	for(i=0;i<numSugg;i++)
+	{
+		printf("%d - %s\n",i+1,suggestions[numSugg]);
+	}
+	scanf("%d",&key);
+	return answer;
+	
 }
 
 int main(int argc, char *argv[])
 {
 	char *words[45427];
 	char text[80];
-	FILE *fpt;
+	FILE *fpt,*fpt2;
 	int i =0;
 	
 	fpt = fopen("linux.words","r");
@@ -31,14 +73,22 @@ int main(int argc, char *argv[])
 		i++;
 	}
 	
-	int result = binary_search(words,"Aarhus",0,45427);
+	int result = search(words,"apple");
 
-	printf("Aarhus found:%d\n",result);
+	printf("apple found:%d\n",result);
 
 	fpt = fopen(argv[1],"r");
+	fpt2 = fopen(argv[2],"w");
 
-	while(fscanf("",""))
+	while(fscanf(fpt,"%s",text)!=EOF)
 	{
-		
+		if(search(words,text))
+		{
+			fprintf(fpt2,"%s",text);
+		}
+		else
+		{
+			findReplacement(words,text);
+		}
 	}
 }
