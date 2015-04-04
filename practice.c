@@ -1,18 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int main()
 {
-	int sum = 0;
-	int num;
-	
-	scanf("%d",&num);
-	while(num!=0)
+	int i;	
+	int k = 0;
+	i = fork();
+	if(i==0)
 	{
-		sum+=num;
-		scanf("%d",&num);
+		for(k=0;k<50;k++)
+		{
+			printf("Hello\n");
+		}
+		
 	}
-	
-	printf("The sum of the numbers is %d",sum);
-
+	else
+	{
+		if(k+1!=50)
+			wait(NULL);
+		printf("Well done my child\n");
+	}
 }
