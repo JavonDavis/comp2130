@@ -1,0 +1,17 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+
+	char *c;
+	int num = 100;
+	printf("What is your name\n");
+
+	//scanf("%s",c);
+	c = (char *)  malloc(num +1);
+	getline(&c,&num,stdin);
+	//fgets(c,sizeof(c),stdin);
+	printf("\n");
+	printf("Hello %s",c);
+}

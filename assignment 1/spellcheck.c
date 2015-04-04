@@ -2,6 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+//620068192
+
+//sequential search 
 int search(char *list[],char word[])
 {	
 	int i;
@@ -13,11 +16,16 @@ int search(char *list[],char word[])
 	return 0;
 }
 
-char* findReplacement(char *list[],char word[])
+/*
+* function to find a suitable replacement
+*/
+char * findReplacement(char *list[],char word[])
 {
 	int n,i,numSugg =0;
 	char *suggestions[10];
 	char *answer;
+
+	printf("The word %s is not found in the dictionary\n",word);
 	
  	n = sizeof(word)-1;
 	while(n>0)
@@ -31,14 +39,15 @@ char* findReplacement(char *list[],char word[])
 		
 		for(i=0;i<45427;i++)
 		{
+			
 			if(numSugg==10)
 				break;
 			if(strstr(list[i],repl)!=NULL)
 			{
+				
 				suggestions[numSugg] = malloc(strlen(list[i])+1);
-				printf("%s\n",list[i]);
+				printf("%d - %s\n",numSugg+1,list[i]);
 				strcpy(suggestions[numSugg],list[i]);
-				printf("%s\n",suggestions[numSugg]);
 				numSugg++;
 				
 			}
@@ -48,12 +57,12 @@ char* findReplacement(char *list[],char word[])
 		n--;
 	}
 	int key;
-	printf("The word %s is not found in the dictionary\n",word);
-	for(i=0;i<numSugg;i++)
-	{
-		printf("%d - %s\n",i+1,suggestions[numSugg]);
-	}
+	printf("Press 0 to use the original word or choose replacement based on the preceding number\n");
 	scanf("%d",&key);
+	if(key == 0)
+		answer = word;
+	else
+		answer = suggestions[key-1];
 	return answer;
 	
 }
@@ -64,6 +73,12 @@ int main(int argc, char *argv[])
 	char text[80];
 	FILE *fpt,*fpt2;
 	int i =0;
+
+	if (argc!=3)//Print error if incorrect arguments given
+	{
+		printf("Incorrect number of inputs.\n");
+		exit(1);
+	}
 	
 	fpt = fopen("linux.words","r");
 	while(fscanf(fpt,"%s",text)!=EOF)
@@ -72,23 +87,21 @@ int main(int argc, char *argv[])
 		strcpy(words[i],text);
 		i++;
 	}
-	
-	int result = search(words,"apple");
 
-	printf("apple found:%d\n",result);
-
-	fpt = fopen(argv[1],"r");
+	fpt = fopen(argv[1],"r");  //opens files for reading and writing
 	fpt2 = fopen(argv[2],"w");
 
 	while(fscanf(fpt,"%s",text)!=EOF)
 	{
 		if(search(words,text))
 		{
-			fprintf(fpt2,"%s",text);
+			fprintf(fpt2,"%s ",text);
 		}
 		else
 		{
-			findReplacement(words,text);
+			char * answer;
+			answer = findReplacement(words,text);
+			fprintf(fpt2,"%s ",answer);
 		}
 	}
 }
