@@ -28,7 +28,7 @@ int main(int argc, char *argv[]){
         printf("socket() failed\n");
         exit(0);
     }
-        /* make local address structure */
+        /* make local address stucture */
     memset(&my_addr, 0, sizeof (my_addr));	/* zero out structure */
     my_addr.sin_family = AF_INET;	/* address family */
     my_addr.sin_addr.s_addr = htonl(INADDR_ANY);  /* current machine IP */
