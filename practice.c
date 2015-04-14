@@ -4,21 +4,22 @@
 
 int main()
 {
-	int i;	
-	int k = 0;
+	int n, *m;
+	n = 5;
+	m =&n;
+	int i;
 	i = fork();
 	if(i==0)
 	{
-		for(k=0;k<50;k++)
-		{
-			printf("Hello\n");
-		}
+		int l;
+		l=8;
+		m = &l;
+		printf("Hello %d\n",*m);
 		
 	}
 	else
 	{
-		if(k+1!=50)
-			wait(NULL);
-		printf("Well done my child\n");
+		wait(NULL);
+		printf("Well done my child%d\n",*m);
 	}
 }

@@ -23,6 +23,7 @@ int main(){
 
     printf("Socket created; sock = %d\n", sock);
 
+    memset(&server, 0, sizeof (server));   /* zero out structure */
     server.sin_addr.s_addr = inet_addr("127.0.0.1");
     server.sin_family = AF_INET;
     server.sin_port = htons( PORT );
@@ -35,8 +36,8 @@ int main(){
     }
 
     printf("Connected\n");
-    while(1)
-    {
+    // while(1)
+    // {
         printf("Enter name: ");
         scanf("%s",name);
 
@@ -67,29 +68,30 @@ int main(){
         printf("\\g - to view groups\n");
         while(1)
         {
+
             FD_SET(sock, &readfs);
             FD_SET(0, &readfs);
 
             memset(response,'\0',2000);
             memset(command,'\0',1000);
 
-            
             select(sock+1, &readfs, NULL, NULL, NULL);
             if(FD_ISSET(sock,&readfs))
             {
+                //printf("Server here first\n");
                 i = recv(sock,response,2000,0);
                 if(i<0){
                     printf("recv failed\n");
                     return 1;
                 }
-                printf("Server reply: \n");
+                //printf("Server reply: \n");
                 if(strcmp(response,"b")==0)
                 {
                     //printf("\nConvo with:%d\n",in_conversation);
                     if(in_conversation ==0)
                     {
                         send(sock,"n\0",2,0);
-                        send(sock,"n\0",2,0);
+                        //send(sock,"n\0",2,0);
                         printf("client not busy\n");
                         
                         
@@ -126,7 +128,7 @@ int main(){
                         j++;
                     }
 
-                    //printf("\nnew_ip : %s  ;  new_port = %s\nForking new process...\n", nIp,nPort);
+                    printf("\nnew_ip : %s  ;  new_port = %s\nForking new process...\n", nIp,nPort);
                     if((i=fork())==0)
                     {
                         new_client_socket = socket(AF_INET , SOCK_STREAM , 0);
@@ -139,7 +141,7 @@ int main(){
                         server_client.sin_family = AF_INET;
                         server_client.sin_port = htons( atoi(nPort) );
 
-                        printf("Attemptig to connect\n");
+                        printf("Attempting to connect\n");
 
                         i = connect(new_client_socket,(struct sockaddr *) &server_client, sizeof(server_client));
                         if(i<0)
@@ -164,12 +166,14 @@ int main(){
                             select(new_client_socket+1, &readfs_new, NULL, NULL, NULL);
                             
                             
-                            // //If new server gets first
-                            // if(FD_ISSET(new_client_socket, &readfs_new)) 
-                            // {
-                            //     recv(new_client_socket, response, 2000, 0);
-                            //     printf("\nMsg from server : %s \n", response);
-                            // }
+                            //If new server gets first
+                            if(FD_ISSET(new_client_socket, &readfs_new)) 
+                            {
+                                recv(new_client_socket, response, 2000, 0);
+                                printf("\nMsg from server : %s \n", response);
+                            }
+
+
                             
                             //If stdin gets first
                             if(FD_ISSET(0, &readfs_new)) 
@@ -275,12 +279,12 @@ int main(){
     
                                 FD_SET(new_client_socket , &readfs_new);
                                 FD_SET(0, &readfs_new);
-    
+
                                 memset(client_msg,'\0',2000);
                                 memset(message,'\0',1000);
     
                                 printf("\nEnter message : ");
-                                select(new_client_socket +1, &readfs_new, NULL, NULL, NULL);
+                                select(FD_SETSIZE, &readfs_new, NULL, NULL, NULL);
                                 
                                 
                                 //If new client gets first
@@ -289,7 +293,7 @@ int main(){
                                         recv(new_client_socket, client_msg , 2000 , 0);
                                         //printf("\n\nwaiting for client to type something...");
                                         printf("\nNew reply : %s",client_msg);
-                                        //send(new_client_socket , client_msg , strlen(client_msg) , 0);
+                                        send(new_client_socket , client_msg , strlen(client_msg) , 0);
                                     }
                                     
                                 //If stdin gets first
@@ -309,5 +313,5 @@ int main(){
                 }
             }
         }
-    }
+    //}
 }
