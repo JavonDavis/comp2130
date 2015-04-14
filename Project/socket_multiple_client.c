@@ -3,7 +3,7 @@
 #include <sys/socket.h> //socket
 #include <arpa/inet.h>  //inet_addr
 
-#define PORT 60000
+#define PORT 61000
 
 int main(){
     int sock,i;
@@ -129,14 +129,15 @@ int main(){
                     }
 
                     printf("\nnew_ip : %s  ;  new_port = %s\nForking new process...\n", nIp,nPort);
-                    if((i=fork())==0)
-                    {
+                    // if((i=fork())==0)
+                    // {
                         new_client_socket = socket(AF_INET , SOCK_STREAM , 0);
                         if(new_client_socket<0)
                         {
                             perror("socket");
                         }
 
+                        memset(&server_client, 0, sizeof (server_client)); 
                         server_client.sin_addr.s_addr = (long int)atoi(nIp);
                         server_client.sin_family = AF_INET;
                         server_client.sin_port = htons( atoi(nPort) );
@@ -149,6 +150,8 @@ int main(){
                             perror("Connect");
                             return 1;
                         }
+
+                        //select(new_client_socket+1,convofds,NULL,NULL,NULL);
 
                         printf("Converstion begun\n");
                         in_conversation = 1;
@@ -184,10 +187,11 @@ int main(){
                         
                         
                             }
-                            FD_CLR(new_client_socket, &readfs_new);
-                            FD_CLR(0, &readfs_new);
+                            // FD_CLR(new_client_socket, &readfs_new);
+                            // FD_CLR(0, &readfs_new);
                         }
-                    }
+                    //}
+                    
                 }
                 else
                 {

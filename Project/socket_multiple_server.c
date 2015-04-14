@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
   
-#define PORT 60000
+#define PORT 61000
  
 int main(int argc , char *argv[])
 {
@@ -254,26 +254,29 @@ int main(int argc , char *argv[])
                             printf("busy?%s\n", busy);
                             if(strcmp(busy,"y") == 0)
                             {
-                                write(sd,"Cannot cannot client is busy.\0",42);
+                                write(sd,"Client busy. Try again later\0",42);
                             }
                             else //setup p2p
                             {
                                 //write(sd,"Client not busy attempting to connect.\0",39);
-                                // int p;
-                                // for(p=0;p<sizeof(sock_desc_client);k++)
-                                // {
-                                //     if(sock_desc_client[p] == sd)
-                                //     {
-                                //         strcpy(current,online[p]);
-                                //         break;
-                                //     }
+                                int p;
+                                for(p=0;p<max_clients;p++)
+                                {
+
+                                    if(sock_desc_client[p] == sd)
+                                    {   
+                                        
+                                        strcpy(current,online[p]);
+                                        break;
+                                    }
                                     
 
-                                // }
+                                }
                                 
-                                // strcpy(reply,current);
-                                memset(reply,'\0',2000);
-                                strcpy(reply,"would like to chat with you? (y - yes,n- no)\n");
+                                //memset(reply,'\0',2000);
+                                strcpy(reply,current);
+                                
+                                strcat(reply," would like to chat with you. Accept?(y/n)\n");
 
                                 printf("%s\n", reply);
 
@@ -307,6 +310,8 @@ int main(int argc , char *argv[])
                                     strcat(reply,temp);
 
                                     printf("Message:%s\n", reply);
+
+                                    sleep(1);
 
                                     write(sock_desc_client[k],reply,strlen(reply));
 
