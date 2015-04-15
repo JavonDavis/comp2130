@@ -1,462 +1,435 @@
-/*
-    C ECHO client example using sockets
-*/
 #include <stdio.h>  //printf
 #include <string.h> //strlen
 #include <sys/socket.h> //socket
 #include <arpa/inet.h>  //inet_addr
 
-int main(int argc , char *argv[])
-{
-    int sock, sock_client,online_count,i,k;
-    struct sockaddr_in server, server_client;
-    
-    int new_server_sock, new_client_sock;
-    struct sockaddr_in new_server, new_client;
-    
-    char message[1000] , server_reply[2000], login[1];
-    char username[10], password[10];
-    char online_user[10] ,to_chat[10];
-    int scl, talking_to = 0, var;
-    char new_ip[30],new_port[10];
-    char index[100];
-    
+#define PORT 60000
+
+int main(){
+    int sock,i;
+    char name[80],response[80],command[80],ip[80],port[10];
+    struct sockaddr_in server,new_server,client, server_client,new_client;
+    char remote_name[80],nIp[80],nPort[80];
+    char client_msg[2000],message[1000];
+    char complete[2000];
+    int size_new,new_client_socket;
+
     //Create socket
     sock = socket(AF_INET , SOCK_STREAM , 0);
-    if (sock == -1)
+    if (sock < 0 )
     {
         printf("Could not create socket");
     }
+
     printf("Socket created; sock = %d\n", sock);
-    
+
+    memset(&server, 0, sizeof (server));   /* zero out structure */
     server.sin_addr.s_addr = inet_addr("127.0.0.1");
     server.sin_family = AF_INET;
-    server.sin_port = htons( 8888 );
+    server.sin_port = htons( PORT );
 
-    //Connect to remote server
-    if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
+    i = connect(sock, (struct sockaddr *) &server, sizeof(server));
+    if(i<0)
     {
-        perror("connect failed. Error");
+        perror("connect");
         return 1;
     }
-    
-    puts("Connected\n");
-    
-    //Login Procedure
-        while(1)
+
+    printf("Connected\n");
+    // while(1)
+    // {
+        printf("Enter username: ");
+        scanf("%s",name);
+
+        i = send(sock,name,strlen(name),0);
+        if(i<0)
         {
-            while(1)
-            {
-                printf("Enter username : ");
-                scanf("%s" , username);
-                //Send username
-                if( send(sock , username , strlen(username) , 0) < 0)
-                {
-                    puts("Sending username failed");
-                    return 1;
-                }       
-        
-                //Receive acknowledgement for username
-                if( recv(sock , login , 1 , 0) < 0)
-                {
-                    puts("recv username failed");
-                    break;
-                }
-                
-                //printf("login = %s\n",login);
-                if(strcmp(login,"y")!=0)
-                    printf("Invalid Username\n");
-                else
-                    break;  
-            }   
-            
-        
-        printf("Enter password : ");
-        scanf("%s" , password);
-    
-        //Send password
-        if( send(sock , password , strlen(password) , 0) < 0)
-        {
-            puts("Sending password failed");
+            printf("Could not send your name\n");
             return 1;
         }
-        //Receive acknowledgement for password
-        if( recv(sock , login , 1 , 0) < 0)
-        {
-            puts("recv password failed");
-            break;
-        }
-        
-        //printf("login = %s\n",login);
-        if(strcmp(login,"y")!=0)
-            printf("Wrong Password\n");
-        else
-            break;  
-        }
-    
-        printf("\n------------------- LOGIN SUCCESSFUL -----------------------\n");
-                
-        char reply[1];
-        
-    /* ----------- SELECT function block begins here ----------*/
-        
-        fd_set readfds; 
-        FD_ZERO(&readfds);
-    
-        while(1) 
-        {
-        
-        puts("waiting....");
-        FD_SET(sock, &readfds);
-        FD_SET(0, &readfds);
-        
-        memset(server_reply,'\0',2000);
-        memset(message,'\0',1000);
-        
-        select(sock+1, &readfds, NULL, NULL, NULL);
-        
-        //If server gets first
-        if(FD_ISSET(sock, &readfds)) {
-        
-            puts("server got here first");
-            if(recv(sock, server_reply, 2000, 0)<0)
-            {
-                puts("recv failed");
-                return 1;
-            }
-            
-            printf("\nserver_reply = %s\n",server_reply);
-            
-            if(strcmp(server_reply,"\\is_busy")==0)
-            {
-                printf("\ntalking to value = %d\n",talking_to);
-                
-                if(talking_to == 0) //not busy
-                {
-                    //send(sock,"n",1,0);
-                    printf("\nreached here -- remote client not busy\n");
-                    
-                    FILE *p = fopen("reply.txt","w");
-                    if(p == NULL)
-                        puts("FILE ERROR" );
-                    fprintf(p,"n\n");
-                    fclose(p);
-                    
-                    memset(server_reply,'\0',2000);         
-                    printf("\nI am not busy\n");    
-                }   
-                else
-                {
-                    //send(sock,"y",1,0);
-                    FILE *p = fopen("reply.txt","w");
-                    if(p == NULL)
-                            puts("FILE ERROR" );
-                    fprintf(p,"y\n");
-                    fclose(p);
-                    
-                    printf("\nI am busy, you know\n");  
-                }   
-            }   //end of is_busy
-            else if(!strncmp(server_reply, "*",1))  //if first character is * then server is sending ip
-            {
-                memset(new_ip,'\0',30);
-                memset(new_port,'\0',10);
-                i = 1;
-                while(server_reply[i] != ',')
-                {
-                    new_ip[i-1] = server_reply[i];
-                    i++;
-                }
-                i++;
-                int j=0;
-                while(server_reply[i] != '\0')
-                {
-                    new_port[j] = server_reply[i];
-                    i++;j++;
-                }
-                printf("\nnew_ip : %s  ;  new_port = %s\nCreating a new process for client now...\n", new_ip,new_port);
-                
-                /* -------------- same client code as above -----------------------*/
-                
-                if(!fork())
-                {
-                    //Create socket
-                    sock_client = socket(AF_INET , SOCK_STREAM , 0);
-                    if (sock_client == -1)
-                    {
-                        printf("Could not create socket for the new connection");
-                    }
-                    printf("New client Socket created; sock_client = %d\n", sock_client);
-                    printf("\nTesting port number int new_port = %d \n",atoi(new_port));
-    
-/*                  server_client.sin_addr.s_addr = inet_addr(new_ip);*/
-                    server_client.sin_addr.s_addr = (long int)atoi(new_ip);
-                    server_client.sin_family = AF_INET;
-                    server_client.sin_port = htons( atoi(new_port) );
 
-                    puts("Attempting to connect to other server...");
-                    
-                    //Connect to remote server
-                    if (connect(sock_client , (struct sockaddr *)&server_client , sizeof(server_client)) < 0)
-                    {
-                        perror("connect failed in client side. Error");
-                        return 1;
-                    }
-    
-                    puts("Yoyo Connected with remote server-client\n");
-                    
-                    fd_set readfds_new; 
-                    FD_ZERO(&readfds_new);
-    
-                    while(1) 
-                    {
+        i = recv(sock,response,80,0);
+        response[strlen(response) -1] = '\0';
+        if(i<0)
+        {
+            printf("Server did not acknowledge your name\n");
+            return 1;
+        }
+        else
+        {
+            printf("%s\n",response );
+        }
+
+        printf("\t\t\t%s\t\t\t\n",name );
         
-                        FD_SET(sock_client, &readfds_new);
-                        FD_SET(0, &readfds_new);
         
-                        memset(server_reply,'\0',2000);
-                        memset(message,'\0',1000);
-                        
-                        printf("\nEnter message : ");
-                        select(sock_client+1, &readfds_new, NULL, NULL, NULL);
-                        
-                        
-                        //If new server gets first
-                        if(FD_ISSET(sock_client, &readfds_new)) 
-                            {
-                                recv(sock_client, server_reply, 2000, 0);
-                                printf("\nMsg from server : %s \n", server_reply);
-                            }
-                        
-                        //If stdin gets first
-                        if(FD_ISSET(0, &readfds_new)) 
-                            {
-/*                              printf("Enter message : ");*/
-                                scanf("%s", message);
-                                send(sock_client  , message , strlen(message) , 0);
-                        
-                        
-                            }
-                        FD_CLR(sock_client, &readfds_new);
-                        FD_CLR(0, &readfds_new);        
-                    
-                    }
-                
+        printf("Command List:\n\\l - view available clients\n");
+        printf("\\c - to communicate with a client\n");
+        printf("\\w - to subscribe to working group\n");
+        printf("\\f - to subscribe to fun group\n");
+        printf("\\sw - to send a broadcast to working group\n");
+        printf("\\sf - to send a broadcast to fun group\n");
+
+        // printf("->)");
+        // fflush(stdout);
+        fd_set readfs;
+        FD_ZERO(&readfs);
+        while(1)
+        {
+            printf("->)");
+            fflush(stdout);
+            FD_SET(sock, &readfs);
+            FD_SET(0, &readfs);
+
+            memset(response,'\0',2000);
+            memset(command,'\0',1000);
+
+            select(sock+1, &readfs, NULL, NULL, NULL);
+
+            if(FD_ISSET(sock,&readfs))
+            {
+                //printf("Server here first\n");
+                i = recv(sock,response,2000,0);
+                if(i<0){
+                    printf("recv failed\n");
                     return 1;
                 }
-                while(wait(NULL) != -1);    
-                /* -------------- same client code as above -----------------------*/
-                
-            }
-            else
-            {
-                //reply from server
-                printf("Server reply :\n");
-                puts(server_reply);
-            }
-                
-        }   //end of server first
-    
-        
-        //if stdin gets first
-        if(FD_ISSET(0, &readfds)) {
-            
-            puts("stdin got here first");
-/*          printf("Enter message : ");*/
-            scanf("%s", message);
-/*          send(sock , message , strlen(message) , 0);*/
-            
-            if(!strcmp(message,"y") || !strcmp(message,"n"))
-            {
-                FILE *p = fopen("reply_remote.txt","w");
-                fflush(p);
-                if(p==NULL)
-                    puts("---FILE ERROR---");
-                fprintf(p,"%s",message);
-                fclose(p);
-                puts("I just typed y/n wrt intereseted");
-                //send(sock , message , strlen(message) , 0);
-            }
-            
-            else if(strcmp(message,"\\join")==0)
-            {
-                send(sock , message , strlen(message) , 0);
-                
-                puts("Enter the username you wish to chat with :");
-                scanf("%s",to_chat);
-            
-                send(sock , to_chat , strlen(to_chat) , 0);
-                
-                recv(sock, server_reply, 2000, 0);
-                if(!strcmp(server_reply,"z"))   //invalid
+                //printf("Server reply: \n");
+                if(strcmp(response,"n") ==0)
                 {
-                    puts("INVALID USERNAME !!!!!!");
-                }   
+                    printf("Server could not find user\n");
+                }
+                else if(!strncmp(response, "@",1))
+                {
+                    memset(nIp,'\0',30);
+                    memset(nPort,'\0',10);
+
+                    i=1;
+
+                    while(response[i] != ',')
+                    {
+                        nIp[i-1] = response[i];
+                        i++;
+                    }
+                    i++;
+                    int j=0;
+                    while(response[i] != '\0')
+                    {
+                        nPort[j] = response[i];
+                        i++;
+                        j++;
+                    }
+
+                    //printf("\nnew_ip : %s  ;  new_port = %s\nForking new process...\n", nIp,nPort);
+                    // if((i=fork())==0)
+                    // {
+                        new_client_socket = socket(AF_INET , SOCK_STREAM , 0);
+                        if(new_client_socket<0)
+                        {
+                            perror("socket");
+                        }
+
+                        memset(&server_client, 0, sizeof (server_client)); 
+                        server_client.sin_addr.s_addr = (long int)atoi(nIp);
+                        server_client.sin_family = AF_INET;
+                        server_client.sin_port = htons( atoi(nPort) );
+
+                        printf("Attempting to connect\n");
+
+                        i = connect(new_client_socket,(struct sockaddr *) &server_client, sizeof(server_client));
+                        if(i<0)
+                        {
+                            perror("Connect");
+                            return 1;
+                        }
+
+                        //select(new_client_socket+1,convofds,NULL,NULL,NULL);
+
+                        printf("Converstion begun\nEnter \\x at any time to end.\n");
+                        fd_set readfs_new; 
+                        FD_ZERO(&readfs_new);
+                        //printf("Enter message : ");
+                        while(1)
+                        {
+                            FD_SET(new_client_socket, &readfs_new);
+                            FD_SET(0, &readfs_new);
+            
+                            memset(response,'\0',2000);
+                            memset(message,'\0',1000);
+                            
+                            //printf("\nEnter message : ");
+                            select(new_client_socket+1, &readfs_new, NULL, NULL, NULL);
+                            
+                            
+                            //If new server gets first
+                            if(FD_ISSET(new_client_socket, &readfs_new)) 
+                            {
+                                recv(new_client_socket, response, 2000, 0);
+                                if(strcmp(response,"yes")==0)
+                                {
+                                    printf("Msg received? : %s \n", response);
+                                }
+                                else if(strcmp(response,"\\x")==0)
+                                {
+                                    printf("Msg received? : %s \n", response);
+                                    printf("ENDING CONVERSATION\n");
+                                    
+                                    //send(new_client_socket,message,strlen(message), 0);
+                                    //close(new_client_socket);
+                                    FD_CLR(new_client_socket, &readfs_new);
+                                    FD_CLR(0, &readfs_new);
+                                    send(sock,"\\x",strlen("\\x"),0);
+                                    break;
+                                }
+                                else
+                                    printf("%s\n", response);
+                                
+                            }
+
+
+                            
+                            //If stdin gets first
+                            if(FD_ISSET(0, &readfs_new)) 
+                            {
+    /*                              printf("Enter message : ");*/
+                                //scanf("%s", message);
+                                fgets(message,sizeof(message),stdin);
+                                message[strlen(message)-1] = '\0';
+                                if(strlen(message)>0)
+                                {
+                                    if(strcmp(message,"\\x")==0)
+                                    {
+                                        printf("ENDING CONVERSATION\n");
+
+                                        send(new_client_socket,message,strlen(message), 0);
+                                        //close(new_client_socket);
+                                        FD_CLR(new_client_socket, &readfs_new);
+                                        FD_CLR(0, &readfs_new);
+                                        send(sock,"\\x",strlen("\\x"),0);
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        strcpy(complete,name);
+                                        strcat(complete,":");
+                                        strcat(complete,message);
+                                        send(new_client_socket  , complete , strlen(complete) , 0);
+                                        memset(complete,'\0',2000);
+                                    }
+                                }
+                            }
+                            // FD_CLR(new_client_socket, &readfs_new);
+                            // FD_CLR(0, &readfs_new);
+                        }
+                    //}
+                    
+                }
                 else
                 {
-                    puts("VALID USERNAME, connecting now ... ");
-                    memset(server_reply,'\0',2000);
-                    recv(sock, server_reply, 2000, 0);  //receive port number
+                    printf("%s\n",response );
+                    //send(sock,response,strlen(response),0);
+                }
                     
-                    printf("\nblah blah server reply = %s \n",server_reply);
-                    i = atoi(server_reply); //new port number
-                    
-                    printf("\nNew port number received = %d \n",i);
-        /*--------------------------Same server code as above -----------------------*/
-                        if(!fork())
-                        {
-                                //Create socket
-                                new_server_sock = socket(AF_INET , SOCK_STREAM , 0);
-                                if (new_server_sock == -1)
-                                {
-                                    printf("Could not create new socket");
-                                }
-                                printf("yoyo new Socket created; socket no = %d\n",new_server_sock);
-    
-                                //Prepare the sockaddr_in structure
-                                new_server.sin_family = AF_INET; 
-                                new_server.sin_addr.s_addr = INADDR_ANY;
-                                
-                                new_server.sin_port = htons( i );
-    
-                                //Bind
-                                if( bind(new_server_sock,(struct sockaddr *)&new_server , sizeof(new_server)) < 0)
-                                {
-                                    //print the error message
-                                    perror("Shit, new bind failed. Error");
-                                    return 1;
-                                }
-                                puts("Yoyo, new bind done");
-                                
-                                //Listen
-                                listen(new_server_sock , 5);
-    
-                                //Accept an incoming connection
-                                puts("Waiting for other client to connect...");
-                                int c;
-                                c = sizeof(struct sockaddr_in);
-    
-                                //accept connection from an incoming client
-                                new_client_sock = accept(new_server_sock, (struct sockaddr *)&new_client, (socklen_t*)&c);
-                                if (new_client_sock < 0)
-                                {
-                                    perror("Shit, new accept failed");
-                                    return 1;
-                                }
-                                printf("yoyoyoy new Connection accepted from %d\n",new_client_sock);
-                                //return 1;
-                                
-                                char new_client_msg[2000];
-                                memset(new_client_msg,'\0',2000);
-                                int read_size;
-                                
-                                puts("Here we are..");
-                                
-                                
-                                fd_set readfds_new1; 
-                                FD_ZERO(&readfds_new1);
-    
-                                while(1) 
-                                {
-        
-                                    FD_SET(new_client_sock , &readfds_new1);
-                                    FD_SET(0, &readfds_new1);
-        
-                                    memset(new_client_msg,'\0',2000);
-                                    memset(message,'\0',1000);
-        
-                                    printf("\nEnter message : ");
-                                    select(new_client_sock +1, &readfds_new1, NULL, NULL, NULL);
-                                    
-                                    
-                                    //If new client gets first
-                                    if(FD_ISSET(new_client_sock , &readfds_new1)) 
-                                        {
-                                            recv(new_client_sock, new_client_msg , 2000 , 0);
-                                            //printf("\n\nwaiting for client to type something...");
-                                            printf("\nNew reply : %s",new_client_msg);
-                                            send(new_client_sock , new_client_msg , strlen(new_client_msg) , 0);
-                                        }
-                                        
-                                    //If stdin gets first
-                                    if(FD_ISSET(0, &readfds_new1)) 
-                                        {
-/*                                          printf("\nEnter message : ");*/
-                                            scanf("%s", message);
-                                            send(new_client_sock  , message , strlen(message) , 0);
-                                        }
-                                    FD_CLR(new_client_sock , &readfds_new1);
-                                    FD_CLR(0, &readfds_new1);       
-                    
-                                }
-                                
-/*                              */
-/*                              */
-/*                              //Receive a message from new client*/
-/*                              while( (read_size = recv(new_client_sock, new_client_msg , 2000 , 0)) > 0 )*/
-/*                              {*/
-/*                                  printf("\n\nwaiting for client to type something...");*/
-/*                                  printf("\nNew reply : %s",new_client_msg);*/
-/*                                  send(new_client_sock , new_client_msg , strlen(new_client_msg) , 0);*/
-/*                                  */
-/*                                  memset(new_client_msg,'\0',2000);*/
-/*                              }*/
-/*  */
-/*                              if(read_size == 0)*/
-/*                              {*/
-/*                                  printf("Client %d disconnected\n",new_client_sock);*/
-/*                                  fflush(stdout);*/
-/*                              }*/
-/*                              else if(read_size == -1)*/
-/*                              {*/
-/*                                  perror("recv failed");*/
-/*                              }*/
-                                return 1;
-                                
-                                
-                        }   
-                        while(wait(NULL) != -1);    
-                /*--------------------------Same server code as above -----------------------*/         
-                    
-                    
-                    
-                }   
-            }   //end of JOIN
-        
-            else if(strcmp(message,"\\list")==0)
-            {
-                    send(sock , message , strlen(message) , 0);
-                    
-                    puts("===> CURRENTLY ONLINE USERS : ");
-                    FILE *f = fopen("online.txt","r");
-                    fscanf(f,"%d",&online_count);
-                    
-                    for(i=0;i<online_count;i++)
-                    {
-                        fscanf(f,"%s",online_user);
-                        fscanf(f,"%d",&scl);
-                        fscanf(f,"%d",&var);
-                        
-                        printf("%s ; Socket Descriptor = %d ; ip = %d\n",online_user,scl, var);
-                    }
-                    fclose(f);  
-            }   //end of LIST
-            else
-                send(sock , message , strlen(message) , 0);
+            }
 
+            if(FD_ISSET(0, &readfs)) {
+
+                scanf("%s",command);
+
+                i = send(sock,command,strlen(command),0);
+                if(strcmp(command,"\\q")==0)
+                {
+                    close(sock);
+                    FD_CLR(sock, &readfs);
+                    FD_CLR(0, &readfs);
+                    FD_ZERO(&readfs);   
+                }
+                else if(strcmp(command, "\\w") == 0)
+                {
+                    //this breaks everything
+                    char * message = "Requesting to join the working group..";
+                    send(sock, message, strlen(message), 0);
+                    memset(command,'\0',2000);
+                }
+ 
+                else if(strcmp(command, "\\f") == 0)
+                {
+                    //this also breaks everything
+                    char * message = "Requesting to join the fun group..";
+                    send(sock, message, strlen(message), 0);
+                    memset(command,'\0',2000);
+                }
+
+                else if (strcmp(command, "\\sw") == 0)
+                {
+                    printf("Enter message to send to working group..\n");
+                    char message[1024];
+                    fgets(message, sizeof(message), stdin); // duplicated to flush buffer
+                    fgets(message, sizeof(message), stdin); 
+                    message[strlen(message) - 1] = 0;
+                    send(sock, message, strlen(message), 0);
+                    memset(command,'\0',2000);
+                }
+
+                else if (strcmp(command, "\\sf") == 0)
+                {
+                    printf("Enter message to send to fun group..\n");
+                    char message[1024];
+                    fgets(message, sizeof(message), stdin); // duplicated to flush buffer
+                    fgets(message, sizeof(message), stdin); 
+                    message[strlen(message) - 1] = 0;
+                    send(sock, message, strlen(message), 0);
+                    memset(command,'\0',2000);
+                }
+                else if(strcmp(command,"\\c") == 0)
+                {
+                    printf("Please enter the name of the client you wish to chat with\n");
+                    scanf("%s",remote_name);
+                    send(sock,remote_name,strlen(remote_name),0);
+
+                    recv(sock,response,80,0);
+                    //response[strlen(response) -1] = '\0';
+                    //printf("Reply:%s\n",response );
+                    if(strcmp(response,"n") ==0)
+                    {
+                        printf("Invalid name\n");
+                    }
+                    else
+                    {
+                        int port,new_sock;
+                        printf("%s\n",response );
+                        memset(response,'\0',2000);
+                        recv(sock,response,2000,0);
+
+                        printf("new port:%s\n", response);
+                        port = atoi(response);
+                        if(port>0)
+                        {
+                        if((i = fork()) == 0)
+                        {
+                            new_sock = socket(AF_INET,SOCK_STREAM,0);
+                            if(new_sock<0)
+                            {
+                                perror("socket");
+                            }
+
+                            printf("new socket created:%d\n",new_sock );
+
+                            new_server.sin_family = AF_INET; 
+                            new_server.sin_addr.s_addr = INADDR_ANY;
+                            
+                            new_server.sin_port = htons( port );
+
+                            i = bind(new_sock, (struct sockaddr *) &new_server, sizeof(new_server));
+                            if(i<0)
+                            {
+                                perror("bind");
+                            }
+
+                            listen(new_sock,1);
+
+                            printf("Waiting for client to connect.\n");
+                            
+                            size_new = sizeof(struct sockaddr_in);
+
+                            new_client_socket = accept(new_sock,(struct sockaddr *) &new_client, (socklen_t *)&size_new);
+
+                            if(new_client_socket<0)
+                            {
+                                perror("accept");
+                            }
+
+                            printf("New connection accepted from %d\n", new_client_socket);
+                            
+                            memset(client_msg,'\0',2000);
+                            int read_size;
+
+                            printf("Conversation begun\nEnter \\x at any time to end.\n");
+                            
+                            fd_set readfs_new; 
+                            FD_ZERO(&readfs_new);
+                            //printf("Enter message : ");
+                            while(1) 
+                            {
     
-            
-        }   //end of stdin first
-        
-        FD_CLR(sock, &readfds);
-        FD_CLR(0, &readfds);
-        
-        }   //end of while(1) loop
-        
-        
-        
-//  }
+                                FD_SET(new_client_socket , &readfs_new);
+                                FD_SET(0, &readfs_new);
+
+                                memset(client_msg,'\0',2000);
+                                memset(message,'\0',1000);
     
-    close(sock);
-    return 0;
+                                //printf("\nEnter message : ");
+                                select(FD_SETSIZE, &readfs_new, NULL, NULL, NULL);
+                                
+                                
+                                //If new client gets first
+                                if(FD_ISSET(new_client_socket , &readfs_new)) 
+                                {
+                                    recv(new_client_socket, client_msg , 2000 , 0);
+                                    //printf("\n\nwaiting for client to type something...");
+                                    printf("%s\n",client_msg);
+                                    if(strcmp(client_msg,"\\x")==0)
+                                    {
+                                        printf("ENDING CONVERSATION\n");
+
+                                        //send(new_client_socket,message,strlen(message), 0);
+                                        //close(new_client_socket);
+                                        FD_CLR(new_client_socket, &readfs_new);
+                                        FD_CLR(0, &readfs_new);
+                                        send(sock,"\\x",strlen("\\x"),0);
+                                        break;
+                                    }
+                                    else
+                                        send(new_client_socket , "yes" , strlen("yes") , 0);
+                                }
+                                    
+                                //If stdin gets first
+                                if(FD_ISSET(0, &readfs_new)) 
+                                {
+/*                                          printf("\nEnter message : ");*/
+                                    //scanf("%s", message);
+                                    fgets(message,sizeof(message),stdin);
+                                    message[strlen(message)-1] = '\0';
+
+                                    if(strlen(message)>0)
+                                    {
+                                        if(strcmp(message,"\\x")==0)
+                                        {
+                                            printf("ENDING CONVERSATION\n");
+
+                                            send(new_client_socket,message,strlen(message), 0);
+                                            //close(new_client_socket);
+                                            FD_CLR(new_client_socket, &readfs_new);
+                                            FD_CLR(0, &readfs_new);
+                                            send(sock,"\\x",strlen("\\x"),0);
+                                            break;
+                                        }
+                                        else
+                                        {
+                                            strcpy(complete,name);
+                                            strcat(complete,":");
+                                            strcat(complete,message);
+                                            strcat(complete,"\n");
+                                            send(new_client_socket  , complete , strlen(complete) , 0);
+                                            //send(new_client_socket  , complete , strlen(complete) , 0);
+                                            memset(complete,'\0',2000);
+                                        }
+                                    }
+                                }
+                                FD_CLR(new_client_socket , &readfs_new);
+                                FD_CLR(0, &readfs_new);       
+                
+                            }
+                        }while(wait(NULL) != -1);
+                        }
+                        else
+                        {
+                            printf("Client is unavailable for personal chat at the mometn\n");
+                        }
+
+                    }
+                }
+            }
+        }
+    //}
 }
