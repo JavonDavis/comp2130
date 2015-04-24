@@ -1,0 +1,1 @@
+			while( fscanf( file, "%s", text) > 0 )
