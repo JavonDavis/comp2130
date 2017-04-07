@@ -11,6 +11,7 @@ max # of clients:10
 
 #Usage
 	Commands:
+	
 	\l - view available clients
 	\c - to communicate with a client
     \w - to subscribe to working group
